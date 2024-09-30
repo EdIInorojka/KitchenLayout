@@ -1,0 +1,134 @@
+﻿@page
+@model IndexModel
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kitchen Layout Generator</title>
+    <style>
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(@Model.RoomWidth, 2fr); 
+            grid-template-rows: repeat(@Model.RoomLength, 2fr); 
+            width: 90%;
+            height: 90vh; 
+            position: relative;
+            border: 2px solid black;
+            visibility: hidden; 
+            z-index: 1; 
+        }
+
+        .big-cell {
+            position: relative;
+            border: 2px solid blue;
+            background-color: transparent;
+            z-index: 1;
+        }
+
+        .small-cell {
+            width: 5%;
+            height: 5%;
+            border: 1px solid black; 
+            z-index: 2;
+            background-color: transparent;
+            position: absolute;
+        }
+
+        .stove, .sink {
+            border: 2px solid green;
+            background-color: white;
+            position: absolute;
+            z-index: 3; 
+        }
+
+        .error {
+            border: 2px solid red;
+        }
+
+        .grid::before,
+        .grid::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            z-index: -1; 
+            background-image: linear-gradient(to right, black 0.25px, transparent 0.25px), linear-gradient(to bottom, black 0.25px, transparent 0.25px);
+            background-size: 5px 5px;
+        }
+    </style>
+
+
+</head>
+<body>
+    <h1>Kitchen Layout Generator</h1>
+
+    <form method="post">
+        <label>Ширина комнаты (м):</label>
+        <input type="number" name="RoomWidth" required /><br />
+
+        <label>Длина комнаты (м):</label>
+        <input type="number" name="RoomLength" required /><br />
+
+        <label>Ширина плиты (м):</label>
+        <input type="number" name="StoveWidth" required /><br />
+
+        <label>Глубина плиты (м):</label>
+        <input type="number" name="StoveDepth" required /><br />
+
+        <label>Угловая плита:</label>
+        <input type="checkbox" name="IsStoveCorner" /><br />
+
+        <label>Ширина мойки (м):</label>
+        <input type="number" name="SinkWidth" required /><br />
+
+        <label>Глубина мойки (м):</label>
+        <input type="number" name="SinkDepth" required /><br />
+
+        <label>Угловая мойка:</label>
+        <input type="checkbox" name="IsSinkCorner" /><br />
+
+        <label>Координаты трубы (x, y):</label>
+        <input type="number" name="SinkX" required />
+        <input type="number" name="SinkY" required /><br />
+
+        <button type="submit">Сгенерировать план</button>
+    </form>
+
+    @if (Model.Elements != null)
+    {
+        <div class="grid" style="visibility: visible;">
+            @for (int j = 0; j < Model.RoomLength; j++)
+            {
+                for (int i = 0; i < Model.RoomWidth; i++)
+                {
+                    <div class="big-cell"></div>
+
+                    @for (int smallJ = 0; smallJ < 2; smallJ++) 
+                    {
+                        @for (int smallI = 0; smallI < 2; smallI++) 
+                        {
+                            <div class="small-cell"></div>
+                        }
+                    }
+                }
+            }
+
+            @foreach (var element in Model.Elements)
+            {
+                if (element.IsPlacedSuccessfully)
+            {
+                    <div class="@element.Name.ToLower()"
+                         style="grid-column: @(element.X + 1); grid-row: @(element.Y + 1);
+                            width: @(element.Width * 100)%; height: @(element.Depth * 100)%;
+                            left: @(element.X * 100)%; top: @(element.Y * 100)%; position: absolute;">
+                        @element.Name
+                    </div>
+
+            }
+            }
+        </div>
+    }
+</body>
+</html>
