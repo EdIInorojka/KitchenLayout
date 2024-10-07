@@ -1,134 +1,105 @@
 ﻿@page
-@model IndexModel
+@model KitchenLayout.Pages.IndexModel
+@{
+    ViewData["Title"] = "Кухонный план";
+}
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Kitchen Layout Generator</title>
-    <style>
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(@Model.RoomWidth, 2fr); 
-            grid-template-rows: repeat(@Model.RoomLength, 2fr); 
-            width: 90%;
-            height: 90vh; 
-            position: relative;
-            border: 2px solid black;
-            visibility: hidden; 
-            z-index: 1; 
-        }
+<h1>Создание плана кухни</h1>
 
-        .big-cell {
-            position: relative;
-            border: 2px solid blue;
-            background-color: transparent;
-            z-index: 1;
-        }
-
-        .small-cell {
-            width: 5%;
-            height: 5%;
-            border: 1px solid black; 
-            z-index: 2;
-            background-color: transparent;
-            position: absolute;
-        }
-
-        .stove, .sink {
-            border: 2px solid green;
-            background-color: white;
-            position: absolute;
-            z-index: 3; 
-        }
-
-        .error {
-            border: 2px solid red;
-        }
-
-        .grid::before,
-        .grid::after {
-            content: "";
-            position: absolute;
-            left: 0;
-            right: 0;
-            top: 0;
-            bottom: 0;
-            z-index: -1; 
-            background-image: linear-gradient(to right, black 0.25px, transparent 0.25px), linear-gradient(to bottom, black 0.25px, transparent 0.25px);
-            background-size: 5px 5px;
-        }
-    </style>
-
-
-</head>
-<body>
-    <h1>Kitchen Layout Generator</h1>
-
-    <form method="post">
-        <label>Ширина комнаты (м):</label>
-        <input type="number" name="RoomWidth" required /><br />
-
-        <label>Длина комнаты (м):</label>
-        <input type="number" name="RoomLength" required /><br />
-
-        <label>Ширина плиты (м):</label>
-        <input type="number" name="StoveWidth" required /><br />
-
-        <label>Глубина плиты (м):</label>
-        <input type="number" name="StoveDepth" required /><br />
-
-        <label>Угловая плита:</label>
-        <input type="checkbox" name="IsStoveCorner" /><br />
-
+<form method="post">
+    <div>
+        <label>Ширина кухни (м):</label>
+        <input type="number" name="Width" required value="@Model.Width" />
+    </div>
+    <div>
+        <label>Длина кухни (м):</label>
+        <input type="number" name="Depth" required value="@Model.Depth" />
+    </div>
+    <div>
+        <label>Позиция трубы (X):</label>
+        <input type="number" name="Sinkx" required value="@Model.SinkX" />
+    </div>
+    <div>
+        <label>Позиция трубы (Y):</label>
+        <input type="number" name="SinkY" required value="@Model.SinkY" />
+    </div>
+    <div>
         <label>Ширина мойки (м):</label>
-        <input type="number" name="SinkWidth" required /><br />
+        <input type="number" name="SinkWidth" required value="@Model.SinkWidth" />
+    </div>
+    <div>
+        <label>Длина мойки (м):</label>
+        <input type="number" name="SinkDepth" required value="@Model.SinkDepth" />
+    </div>
+    <div>
+        <label>Мойка угловая:</label>
+        <input type="checkbox" name="SinkIsCorner" value="true" @(Model.SinkIsCorner ? "checked" : "") />
+    </div>
+    <div>
+        <label>Ширина плиты (м):</label>
+        <input type="number" name="StoveWidth" required value="@Model.StoveWidth" />
+    </div>
+    <div>
+        <label>Длина плиты (м):</label>
+        <input type="number" name="StoveDepth" required value="@Model.StoveDepth" />
+    </div>
+    <div>
+        <label>Плита угловая:</label>
+        <input type="checkbox" name="StoveIsCorner" value="true" @(Model.StoveIsCorner ? "checked" : "") />
+    </div>
+    <button type="submit">Создать план</button>
+</form>
 
-        <label>Глубина мойки (м):</label>
-        <input type="number" name="SinkDepth" required /><br />
+@if (Model.Room != null)
+{
+    <h2>Координатная сетка</h2>
+    <svg width="@(Model.Room.Width * 10)" height="@(Model.Room.Depth * 10)" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <pattern id="smallGrid" width="10" height="10" patternUnits="userSpaceOnUse">
+                <path d="M 10 0 L 0 0 0 10" fill="none" stroke="gray" stroke-width="0.5" />
+            </pattern>
+            <pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse">
+                <rect width="100" height="100" fill="url(#smallGrid)" />
+                <path d="M 100 0 L 0 0 0 100" fill="none" stroke="blue" stroke-width="1" />
+            </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid)" />
 
-        <label>Угловая мойка:</label>
-        <input type="checkbox" name="IsSinkCorner" /><br />
+        @if (Model.Room.Sink != null)
+        {
+            <rect x="@(Model.Room.Sink.Position.X * 10)"
+                  y="@(Model.Room.Depth * 10 - Model.Room.Sink.Position.Y * 10 - Model.Room.Sink.Depth * 10)"
+                  width="@(Model.Room.Sink.Width * 10)"
+                  height="@(Model.Room.Sink.Depth * 10)"
+                  fill="white"
+                  stroke="@(string.IsNullOrEmpty(Model.Room.ErrorMessage) ? "black" : "red")"
+                  stroke-width="2" />
+        }
 
-        <label>Координаты трубы (x, y):</label>
-        <input type="number" name="SinkX" required />
-        <input type="number" name="SinkY" required /><br />
+        @if (Model.Room.Stove != null)
+        {
+            <rect x="@(Model.Room.Stove.Position.X * 10)"
+                  y="@(Model.Room.Depth * 10 - Model.Room.Stove.Position.Y * 10 - Model.Room.Stove.Depth * 10)"
+                  width="@(Model.Room.Stove.Width * 10)"
+                  height="@(Model.Room.Stove.Depth * 10)"
+                  fill="white"
+                  stroke="@(string.IsNullOrEmpty(Model.Room.ErrorMessage) ? "black" : "red")"
+                  stroke-width="2" />
+        }
+    </svg>
 
-        <button type="submit">Сгенерировать план</button>
-    </form>
-
-    @if (Model.Elements != null)
+    @if (!string.IsNullOrEmpty(Model.Room.ErrorMessage))
     {
-        <div class="grid" style="visibility: visible;">
-            @for (int j = 0; j < Model.RoomLength; j++)
-            {
-                for (int i = 0; i < Model.RoomWidth; i++)
-                {
-                    <div class="big-cell"></div>
-
-                    @for (int smallJ = 0; smallJ < 2; smallJ++) 
-                    {
-                        @for (int smallI = 0; smallI < 2; smallI++) 
-                        {
-                            <div class="small-cell"></div>
-                        }
-                    }
-                }
-            }
-
-            @foreach (var element in Model.Elements)
-            {
-                if (element.IsPlacedSuccessfully)
-            {
-                    <div class="@element.Name.ToLower()"
-                         style="grid-column: @(element.X + 1); grid-row: @(element.Y + 1);
-                            width: @(element.Width * 100)%; height: @(element.Depth * 100)%;
-                            left: @(element.X * 100)%; top: @(element.Y * 100)%; position: absolute;">
-                        @element.Name
-                    </div>
-
-            }
-            }
+        <div style="color:red;">
+            <strong>Ошибка:</strong> @Model.Room.ErrorMessage
         </div>
     }
-</body>
-</html>
+}
+
+
+
+
+
+
+
+
